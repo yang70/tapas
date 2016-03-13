@@ -1,4 +1,6 @@
-source_files = Rake::FileList.new("**/*.md", "**/*.markdown") do |fl|
+Rake.application.options.trace_rules = true
+
+SOURCE_FILES = Rake::FileList.new("**/*.md", "**/*.markdown") do |fl|
   fl.exclude("~*")
   fl.exclude(/^scratch\//)
   fl.exclude do |f|
@@ -7,11 +9,18 @@ source_files = Rake::FileList.new("**/*.md", "**/*.markdown") do |fl|
 end
 
 task :default => :html
-task :html => source_files.ext(".html")
+task :html => SOURCE_FILES.ext(".html")
 
-rule ".html" => ".md" do |t|
+# replace reliance on .md extension to lamda created below
+rule ".html" => ->(f){source_for_html(f)} do |t|
   sh "pandoc -o #{t.name} #{t.source}"
 end
+
+def source_for_html(html_file)
+  # rake allows the .ext method to be used on individual file
+  SOURCE_FILES.detect{|f| f.ext('') == html_file.ext('')}
+end
+
 
 # # see future episodes for avoiding rule duplication like this
 # rule ".html" => ".markdown" do |t|
