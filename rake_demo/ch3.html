@@ -1,0 +1,15 @@
+<h1 id="message-encryptor---a-single-page-javascript-encryption-application">Message Encryptor - A Single Page Javascript Encryption Application</h1>
+<p>By <a href="http://www.matthewgyang.com">Matthew Yang</a>.</p>
+<h2 id="description">Description</h2>
+<p>This application was created as a class assignment and was modified from the base repo located <a href="https://github.com/brookr/encryptor">here</a>. We were to modify this code into a working application and set up a testing suite.</p>
+<h2 id="my-approach">My Approach</h2>
+<p>My first step was to examine the code and see what the intent was. I made a decision to use 'vanilla' javascript rather than jQuery for more pure practice. I then filled in the <code>encryptor</code> object and it's methods with appropriate code. In order to make the application adaptable to different domains, I decided to grab the current url via <code>window.location.href</code> rather than hard code it. I then concatenated a &quot;?&quot; followed by the encrypted message cypher.</p>
+<p>The dynamic page content is keyed by a javascript function that runs on page load that checks if there is a &quot;?&quot; in the current url via <code>window.location.href.includes('?')</code>. This is by no means a perfect system, and breaks down if someone types in a question mark into the url manually. However it works most of the time and is an acceptable solution in my opinion.</p>
+<h2 id="testing">Testing</h2>
+<p>Testing was the most difficult aspect of this assignment. I set up testing with <a href="https://www.npmjs.com">NPM</a>, <a href="https://mochajs.org">Mocha</a> and <a href="http://chaijs.com">Chai</a> (<code>node_modules</code> has been git-ignored so they won't be shown in this repository). The problem was how to test this (without having to use something like Selenium Webdriver). I solved this by extracting the actual encryption code from the main js file in order to isolate it from all of the browser dependant javascript. That way I can test that the encrypt/decrypt function is working.</p>
+<p>The other obstacle was the <a href="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/aes.js">CryptoJS</a> encryption source. For some reason I could not get it to load in the test file and ended up just including the entire code base in my <code>encryptor.js</code> file.</p>
+<h2 id="credit">Credit</h2>
+<ul>
+<li>Base code source <a href="https://github.com/brookr/encryptor/blob/master/index.html">https://github.com/brookr/encryptor</a></li>
+<li>CryptoJS <a href="https://code.google.com/p/crypto-js/" class="uri">https://code.google.com/p/crypto-js/</a></li>
+</ul>

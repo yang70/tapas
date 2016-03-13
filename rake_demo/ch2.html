@@ -1,0 +1,106 @@
+<h1 id="secret-spot-saver-save-your-fishing-locations-on-the-fly">Secret Spot Saver | Save your fishing locations, on the fly!</h1>
+<p><a href="https://waffle.io/yang70/secret-spot-saver"><img src="https://badge.waffle.io/yang70/secret-spot-saver.png?label=ready&amp;title=Ready" alt="Stories in Ready" /></a> <a href="https://travis-ci.org/yang70/secret-spot-saver"><img src="https://travis-ci.org/yang70/secret-spot-saver.svg?branch=master" alt="Build Status" /></a> <a href="https://coveralls.io/github/yang70/secret-spot-saver?branch=master"><img src="https://coveralls.io/repos/yang70/secret-spot-saver/badge.svg?branch=master&amp;service=github" alt="Coverage Status" /></a></p>
+<h4 id="a-web-app-to-keep-all-of-your-favorite-fishing-spots-secret-and-secure.-see-nearby-locations-and-get-directions-via-google-maps-integration.">A web app to keep all of your favorite fishing spots secret and secure. See nearby locations and get directions via Google Maps integration.</h4>
+<p>by <a href="http://matthewgyang.com">Matthew Yang</a></p>
+<h2 id="description">Description</h2>
+<p>The objective of this single page application is to be able to save information about a fishing spot including latitude/longitude, water type, fishing technique and notes. These locations are kept secure using an authentication and authorization system that only allows a registered user to see his/her own created spots.</p>
+<p>Additionally the web interface was designed using AngularJS to be a quick single page application that utilizes AJAX calls to a Rails API and dynamic HTML to prevent full page refreshes.</p>
+<p><img src="https://s3-us-west-2.amazonaws.com/spot-saver/readme-images/2015-11-01+12.51.17.png" width="200px" /> <img src="https://s3-us-west-2.amazonaws.com/spot-saver/readme-images/signin-flash.PNG" width="200px" /> <img src="https://s3-us-west-2.amazonaws.com/spot-saver/readme-images/2015-11-01+12.55.25.png" width="200px" /></p>
+<p><img src="https://s3-us-west-2.amazonaws.com/spot-saver/readme-images/2015-11-01+12.54.50.png" width="200px" /> <img src="https://s3-us-west-2.amazonaws.com/spot-saver/readme-images/2015-11-01+12.54.59.png" width="200px" /> <img src="https://s3-us-west-2.amazonaws.com/spot-saver/readme-images/2015-11-01+12.54.27.png" width="200px" /></p>
+<h2 id="technology-used">Technology Used</h2>
+<p>At the most basic, this application utilizes a <a href="http://rubyonrails.org/">Ruby on Rails</a> back-end as an API for an <a href="https://angularjs.org">Angular.JS</a> front end, single page application.</p>
+<p>However there is a lot of other technology incorporated to make this work (relatively) smoothly.</p>
+<h3 id="rails">Rails</h3>
+<p>I started by generating a new Rails application and modeling my resource, which I called a <code>Spot</code>. This spot would contain all the information of a location:</p>
+<ul>
+<li>Name</li>
+<li>Latitude</li>
+<li>Longitude</li>
+<li>Water type</li>
+<li>Technique</li>
+<li>Notes</li>
+</ul>
+<p>I then generated a <code>SpotsController</code> and started creating the CRUD actions. However because I knew this would be accessed as an API I made sure that instead or rendering views I returned a <a href="http://www.json.org/">JSON</a> object. Fortunately Rails makes this incredibly simple by allowing you to write a statment like <code>render json: spot</code>, which will convert an ActiveRecord object to JSON and package it up into a response.</p>
+<p><strong>NOTE:</strong> I considered using an API versioning strategy like I discussed in my <a href="http://www.matthewgyang.com/articles/5">blog</a>, however with limited time to get this up and running I left that as a future refactor.</p>
+<h3 id="active-model-serializers">Active Model Serializers</h3>
+<p>I then utilized the <a href="https://github.com/rails-api/active_model_serializers">Active Model Serializers</a> gem, which allows you to format your JSON objects to your liking, returning only the information you specify and in the format you decide.</p>
+<div class="sourceCode"><pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="co"># app/serializers/spot_serializer.rb</span>
+<span class="kw">class</span> <span class="dt">SpotsSerializer</span> &lt; <span class="dt">ActiveModel</span>::<span class="dt">Serializer</span>
+  attributes <span class="st">:id</span>,
+           <span class="st">:user_id</span>,
+           <span class="st">:name</span>,
+           <span class="st">:lat</span>,
+           <span class="st">:lon</span>,
+           <span class="st">:water_type</span>,
+           <span class="st">:technique</span>,
+           <span class="st">:notes</span>,
+           <span class="st">:created_at</span>,
+           <span class="st">:updated_at</span>
+<span class="kw">end</span></code></pre></div>
+<h3 id="angular.js">Angular.JS</h3>
+<p>With the API tested and passing, I moved on to the web interface of the application. Modeling after some of my previous projects, I decided to have the <a href="https://angularjs.org">Angular.JS</a> application live in the <code>app/assets</code> folder in Rails and utilize the Rails Asset Pipeline to serve it.</p>
+<p>I generated a simple controller called <code>landing</code> whose index view would serve as the base of the application and set it to the <code>root</code> path.</p>
+<p>I then started outlining an HTML framework based on some UI design drawings I had sketched up earlier. In order to minimize page refreshes and take advantage of Angular's client side MVC efficiency, I incorporated a number of <code>ng-hide</code> and <code>ng-show</code> in order to make the page feel dynamic without having to actually refresh any HTML.</p>
+<p>For the JavaScript, I created controllers for the major actions which incorporate AJAX requests to the Rails API:</p>
+<ul>
+<li>Sign in</li>
+<li>Sessions</li>
+<li>Spots</li>
+</ul>
+<p>I was able to create a welcome/sign in page, sign up page and a main application page that dynamically changes for spot addition/deletion/edit.</p>
+<h3 id="devise-angular-devise">Devise / Angular Devise</h3>
+<p><a href="https://github.com/plataformatec/devise">Devise</a> on the Rails side is very straightforward and smooth when following the directions in the README and I had it up and running within an hour.</p>
+<p>As far as integrating Devise (current user, user sessions, authentication) into Angular, luckily I had recently accomplished this in a previous project.</p>
+<p>I installed the <a href="https://github.com/cloudspace/angular_devise">Angular Devise</a> JavaScript library and incorporated a strategy of a now-defunct blog post to set up a sign in controller and a session controller.</p>
+<h3 id="pundit">Pundit</h3>
+<p>I incorporated the <a href="https://github.com/elabs/pundit">Pundit gem</a> for authorization and developed a simple <code>spot</code> policy which is stored in <code>app/policies</code>. Through simple integration in the controllers, you can verify that only authorized information is returned during an AJAX request:</p>
+<div class="sourceCode"><pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="co"># index action from app/controllers/spots_controller.rb</span>
+<span class="kw">def</span> index
+  spots = policy_scope(<span class="dt">Spot</span>)
+  render <span class="st">json: </span>spots, <span class="st">status: </span><span class="dv">200</span>
+<span class="kw">end</span></code></pre></div>
+<h3 id="angular-google-maps">Angular Google Maps</h3>
+<p>I used the following JS library called <a href="http://angular-ui.github.io/angular-google-maps/">Angular Google Maps</a> in order to incorporate maps into my application. The documentation is fairly easy to follow for basic operations, however it took a lot of trial and error to get more advanced features working.</p>
+<p>Eventually I was able to get the map to appear and show previously created spots as well as create a new spot given the user's current location by utilizing the HTML5 <code>navigator.geolocation</code> JS object API of modern web browsers.</p>
+<p>This information was then successfully saved via the API and redisplayed via AJAX calls.</p>
+<p><strong>NOTE:</strong> As of this writing, one of the main features I planned during design of being able to add a spot location after the fact (not current location) is not working. After spending almost a full day trying to get it working I decided to move on, especially since the core of the this application was created in a 4 day time-frame.</p>
+<h3 id="angular-flash">Angular Flash</h3>
+<p>Flash messages have been incorporated using <a href="https://github.com/wmluke/angular-flash">Angular Flash</a>.</p>
+<p><img src="https://s3-us-west-2.amazonaws.com/spot-saver/readme-images/signin-flash.PNG" width="200px" /></p>
+<p>Here's an example of the JavaScript for displaying an error message:</p>
+<div class="sourceCode"><pre class="sourceCode javascript"><code class="sourceCode javascript">...
+}<span class="op">,</span> <span class="kw">function</span>(error)<span class="op">{</span>
+  <span class="va">$</span>.<span class="at">each</span>(<span class="va">error</span>.<span class="va">data</span>.<span class="at">errors</span><span class="op">,</span> <span class="kw">function</span>(index<span class="op">,</span> value) <span class="op">{</span>
+    errorMsg <span class="op">+=</span> (index <span class="op">+</span> <span class="st">&#39; &#39;</span> <span class="op">+</span> value <span class="op">+</span> <span class="st">&#39;: &#39;</span>)<span class="op">;</span>
+  <span class="op">}</span>)
+  <span class="va">flash</span>.<span class="at">to</span>(<span class="st">&#39;signup-alert&#39;</span>).<span class="at">error</span> <span class="op">=</span> errorMsg<span class="op">;</span>
+<span class="op">}</span>)<span class="op">;</span></code></pre></div>
+<h3 id="angular-rails-csrf">Angular Rails CSRF</h3>
+<p>In order to access the built in <a href="https://docs.angularjs.org/api/ng/service/$http">Angular Cross Site Request Forgery</a> I added the <a href="https://github.com/jsanders/angular_rails_csrf">Angular Rails CSRF gem</a> that will send the token in a header.</p>
+<p>One obstacle that I again had encountered in a previous Rails/Angular application was an issue with the CSRF token being invalidated after a Devise log in. See my <a href="http://www.matthewgyang.com/articles/6">blog post</a> about this for more information on the work-around.</p>
+<h3 id="ngannotate-rails">NGAnnotate Rails</h3>
+<p>When serving Angular code from a Rails application using the Rails Asset Pipeline, you run into issues when the code is minified. In order to get around this I installed the <a href="https://github.com/kikonen/ngannotate-rails">NGAnnotate Rails gem</a>, which is a gem version of <a href="https://github.com/olov/ng-annotate">NG Annotate</a>.</p>
+<h3 id="background-jobs-sidekiqredissendgrid">Background Jobs (Sidekiq/Redis/Sendgrid)</h3>
+<p><a href="http://guides.rubyonrails.org/action_mailer_basics.html">ActionMailer</a> has been configured along with <a href="https://github.com/mperham/sidekiq">Sidekiq</a> (which uses <a href="http://redis.io/">Redis</a>) and <a href="https://sendgrid.com/">Sendgrid</a> on <a href="https://dashboard.heroku.com/">Heroku</a> to send a welcome email to new users on successful registration. It also sends a notification email to myself advising of a new registration.</p>
+<p>This is done in a background job by creating a Sidekiq worker and calling that worker to execute asynchronously after yielding to <code>super</code> in the <code>registrations_controller.rb</code> that was generated from devise.</p>
+<p>I also followed <a href="https://coderwall.com/p/fprnhg/free-background-jobs-on-heroku">these</a> instructions to use the Unicorn server on Heroku and generate workers within the same dyno (therefore free) instead of requiring a second dyno.</p>
+<h3 id="styling">Styling</h3>
+<p>For this project I incorporated <a href="http://getbootstrap.com/">Bootstrap</a> in order to make it mobile focused with large buttons and layout.</p>
+<h2 id="testing">Testing</h2>
+<p>I committed to have a full test suite for the entire application. Current test coverage via Coveralls: <a href="https://coveralls.io/github/yang70/secret-spot-saver?branch=master"><img src="https://coveralls.io/repos/yang70/secret-spot-saver/badge.svg?branch=master&amp;service=github" alt="Coverage Status" /></a></p>
+<h3 id="integration-testing-for-api">Integration testing for API</h3>
+<p>I have standard Rack integration tests for the API portion of the application which is testing all CRUD actions including Authentication/Authorization.</p>
+<h3 id="capybarapoltergeist-for-front-end">Capybara/Poltergeist for Front end</h3>
+<p>The Angular side of the application is tested via a JavaScript enabled headless browser, in this case <a href="https://github.com/jnicklas/capybara">Capybara</a> with <a href="https://github.com/teampoltergeist/poltergeist">Poltergeist(Phantom JS)</a> as the driver.</p>
+<p>The main hurdle I overcame here was how to simulate a call to <code>navigator.geolocation</code>. I got around this using the method described <a href="http://collectiveidea.com/blog/archives/2014/01/21/mocking-html5-apis-using-phantomjs-extensions/">here</a> and mocking that object with the following:</p>
+<div class="sourceCode"><pre class="sourceCode javascript"><code class="sourceCode javascript"><span class="co">// test/phantomjs_ext/geolocation.js</span>
+<span class="va">navigator</span>.<span class="at">geolocation</span> <span class="op">=</span>
+<span class="op">{</span>
+  <span class="dt">getCurrentPosition</span><span class="op">:</span> <span class="kw">function</span>(callback) <span class="op">{</span>
+    <span class="at">callback</span>(<span class="op">{</span> <span class="dt">coords</span><span class="op">:</span> <span class="op">{</span> <span class="dt">latitude</span><span class="op">:</span> <span class="st">&quot;47.62332381&quot;</span><span class="op">,</span> <span class="dt">longitude</span><span class="op">:</span> <span class="st">&quot;-122.3360773&quot;</span> <span class="op">}</span> <span class="op">}</span>)<span class="op">;</span>
+  <span class="op">}</span>
+<span class="op">}</span></code></pre></div>
+<p>This way during the test run, calling to that object will return a properly formatted response.</p>
+<h2 id="documentation">Documentation</h2>
+<p>At the last minute I also decided to try out an API documentation gem called <a href="https://github.com/Apipie/apipie-rails">APIPIE</a>, which allows you to generate documentation for accessing your API within your code. The results can be seen here:</p>
+<p><a href="https://s3-us-west-2.amazonaws.com/spot-saver/readme-images/documentation.html">documentation</a></p>

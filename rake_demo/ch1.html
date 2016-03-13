@@ -1,0 +1,94 @@
+<h1 id="personal-website---a-ruby-on-rails-application">Personal Website - A Ruby on Rails application</h1>
+<p><a href="https://travis-ci.org/yang70/portfolio"><img src="https://travis-ci.org/yang70/portfolio.svg?branch=master" alt="Build Status" /></a> <a href="https://coveralls.io/github/yang70/portfolio?branch=master"><img src="https://coveralls.io/repos/yang70/portfolio/badge.svg?branch=master&amp;service=github" alt="Coverage Status" /></a></p>
+<p>By <a href="http://www.matthewgyang.com">Matthew Yang</a>.</p>
+<h2 id="description">Description</h2>
+<p>This repository is an ongoing project that was created for a couple of reasons:</p>
+<ol style="list-style-type: decimal">
+<li>To establish a personal website and presence on the web.</li>
+<li>As a 'playground' to test out different technologies and methods.</li>
+</ol>
+<p>As much as I've tried to keep it updated, there are many areas that need to be cleaned up, refactored and ultimately changed as my experience with Rails (and web development in general) has increased.</p>
+<p>Below, I'll try to explain some of the features and techniques that have been incorporated into the application.</p>
+<h2 id="authentication-authorization">Authentication / Authorization</h2>
+<p>Basic authentication is implemented with a standard <a href="https://github.com/plataformatec/devise">Devise</a> integration.</p>
+<p>Policies and scope are configured using <a href="https://github.com/elabs/pundit">Pundit</a>, and depend on a user's role (basic user, editor, guest author)</p>
+<p>New user's have the option of registering using their Twitter account which was implemented using <a href="https://github.com/arunagw/omniauth-twitter">Omniauth-Twitter</a>.</p>
+<h2 id="blog">Blog</h2>
+<p>The blog is pretty standard, however I wanted to be able to use Markdown for styling and for inserting code blocks. I followed <a href="http://allfuzzy.tumblr.com/post/27314404412/markdown-and-code-syntax-highlighting-in-ruby-on">this</a> blog post which institutes <a href="https://github.com/vmg/redcarpet">Redcarpet</a> and <a href="https://github.com/rubychan/coderay">CodeRay</a>.</p>
+<p>One aspect I have not been able to implement is horizontal scroll for wide code blocks.</p>
+<h2 id="portfolio">Portfolio</h2>
+<p>As I mentioned before, the portfolio section uses remote JavaScript for it's CRUD actions and is able to accomplish this without a page reload.</p>
+<p>In the show method for projects, I pull in the readme directly from GitHub via the <a href="https://developer.github.com/v3/">GitHub API</a> and render the markdown like I do in the blog section.</p>
+<p>I wrote a helper method to grab the raw markdown:</p>
+<div class="sourceCode"><pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="kw">def</span> get_readme(repo_name)
+
+  uri = <span class="dt">URI</span>.parse(<span class="st">&#39;https://api.github.com/repos/yang70/&#39;</span> + repo_name + <span class="st">&#39;/readme&#39;</span>)
+
+  https = <span class="dt">Net</span>::<span class="dt">HTTP</span>.new(uri.hostname, uri.port)
+  https.use_ssl = <span class="dv">true</span>
+
+  req = <span class="dt">Net</span>::<span class="dt">HTTP</span>::<span class="dt">Get</span>.new(uri.path, initheader = {<span class="st">&#39;Accept&#39;</span> =&gt; <span class="st">&#39;application/vnd.github.v3.raw&#39;</span>})
+  req.basic_auth <span class="st">&#39;yang70&#39;</span>, <span class="dt">ENV</span>[<span class="st">&#39;GITHUB_ACCESS&#39;</span>]
+
+  res = https.request(req)
+
+  res.body
+<span class="kw">end</span></code></pre></div>
+<h2 id="mailers-sidekiq-redis">Mailers / Sidekiq / Redis</h2>
+<p><code>ActionMailer</code> is configured to alert the editor of various events with the site, including new user registration and comments. Email configured in Heroku deployment with the add on <a href="https://sendgrid.com/">SendGrid</a></p>
+<p>The new user registration welcome email to the user is handled through a background job using <a href="https://github.com/mperham/sidekiq">Sidekiq</a> and <a href="http://redis.io/">Redis</a>.</p>
+<p>I created an <code>app/workers/sign_up_worker.rb</code> with the following code:</p>
+<div class="sourceCode"><pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="kw">class</span> <span class="dt">SignUpWorker</span>
+  include <span class="dt">Sidekiq</span>::<span class="dt">Worker</span>
+
+  <span class="kw">def</span> perform(userid)
+    user = <span class="dt">User</span>.find(userid)
+    <span class="dt">WelcomeMailer</span>.new_welcome_email(user).deliver_later
+  <span class="kw">end</span>
+<span class="kw">end</span></code></pre></div>
+<p>Then in <code>app/controllers/sessions/registrations_controller.rb</code> I add a line after deferring to <code>super</code> for the rest of the action:</p>
+<div class="sourceCode"><pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="kw">def</span> create
+  <span class="dv">super</span>
+  <span class="dt">SignUpWorker</span>.perform_async(<span class="ot">@user</span>.id) <span class="kw">unless</span> <span class="ot">@user</span>.invalid?
+<span class="kw">end</span></code></pre></div>
+<h2 id="picture-upload">Picture Upload</h2>
+<p>Picture uploading to articles was enabled with the <a href="https://github.com/carrierwaveuploader/carrierwave">CarrierWave</a> gem. It is configured to upload to AWS S3.</p>
+<p>Future plans include allowing users to crop an image after upload using something like <a href="https://github.com/kirtithorat/carrierwave-crop/">Carrierwave Crop</a>, or I might switch to <a href="https://github.com/thoughtbot/paperclip">Paperclip</a> and <a href="https://github.com/rsantamaria/papercrop">Papercrop</a>.</p>
+<h2 id="remote-javascript-rjs">Remote JavaScript (RJS)</h2>
+<p>The projects sections has been created to allow quick editing by incorporating AJAX calls and jQuery using Rails <a href="http://edgeguides.rubyonrails.org/working_with_javascript_in_rails.html">RJS</a>.</p>
+<p>CRUD action links updated by adding <code>remote: true</code> and creating the correct response logic in the controller to respond to html or javascript accordingly. Then specific javascript 'views' were created, which are just jQuery statements that when execute, preform the desired actions including updating the page structure.</p>
+<p>Here's an example of a controller action that can respond to RJS:</p>
+<div class="sourceCode"><pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="kw">def</span> create
+  <span class="ot">@project</span> = <span class="dt">Project</span>.new(project_params)
+  <span class="kw">if</span> <span class="ot">@project</span>.save
+    respond_to <span class="kw">do</span> |format|
+      format.html { redirect_to <span class="ot">@project</span>, flash[<span class="st">:notice</span>] = <span class="st">&quot;Project has been created.&quot;</span> }
+      format.js
+    <span class="kw">end</span>
+  <span class="kw">else</span>
+    respond_to <span class="kw">do</span> |format|
+      format.html { render <span class="st">:new</span> }
+      format.js { render <span class="st">:new</span>}
+    <span class="kw">end</span>
+  <span class="kw">end</span>
+<span class="kw">end</span></code></pre></div>
+<h2 id="styling">Styling</h2>
+<p>Styling is my self admitted &quot;weak spot&quot;, and I'm working hard to make it a strength! I started this site by using the <a href="http://foundation.zurb.com/">Zurb Foundation</a> framework, but have recently swapped it out for <a href="http://getbootstrap.com/">Bootstrap</a> which I personally find more intuitive. Additionally there seem to be more resources available for questions/answers.</p>
+<p>Ideally, I would like to minimally rely on a framework and institute original styling on my own, which would be future goal.</p>
+<h2 id="testing">Testing</h2>
+<p>Feature tests are implemented using <a href="https://github.com/blowmage/minitest-rails-capybara">Minitest Rails Capybara</a> and the corresponding Capybara DSL language. Example of a Capybara feature test:</p>
+<div class="sourceCode"><pre class="sourceCode ruby"><code class="sourceCode ruby">require <span class="st">&quot;test_helper&quot;</span>
+
+feature <span class="st">&quot;CanAccessWelcome&quot;</span> <span class="kw">do</span>
+  scenario <span class="st">&quot;is displaying correct content&quot;</span> <span class="kw">do</span>
+    visit root_path
+    page.must_have_content <span class="st">&quot;About&quot;</span>
+    page.must_have_content <span class="st">&quot;Recent Blog Posts&quot;</span>
+  <span class="kw">end</span>
+<span class="kw">end</span></code></pre></div>
+<h3 id="minitest-reporters">Minitest Reporters</h3>
+<p>Added <a href="https://github.com/kern/minitest-reporters">Minitest Reporters gem</a> to add a some color and separation to tests. Here's a <a href="https://www.youtube.com/watch?v=lPu1GwS5QU0&amp;list=PLgUnlWmteg8rV6qFZTs8xjpJVNGv1qt_s&amp;index=41">lightning talk</a> I gave on the different options.</p>
+<h3 id="continuous-integration">Continuous Integration</h3>
+<p>Continuous integration has been implemented with Travis-CI</p>
+<h3 id="test-coverage">Test Coverage</h3>
+<p>Test coverage badge on this README from <a href="https://coveralls.io/">COVERALLS</a></p>

@@ -1,0 +1,19 @@
+# default task depends on html task
+task :default => :html
+
+# html task depends on 3 html files (that don't exist originally)
+task :html => %W[ch1.html ch2.html ch3.html]
+
+# first method, explicit task loop, if html file doesn't exist or has changed,
+# then create it
+## %W[ch1.md ch2.md ch3.md].each do |md_file|
+##   html_file = File.basename(md_file, ".md") + ".html"
+##   file html_file => md_file do
+##     sh "pandoc -o #{html_file} #{md_file}"
+##   end
+## end
+
+# second method, define a generic rule that rake will find and follow
+rule ".html" => ".md" do |t|
+  sh "pandoc -o #{t.name} #{t.source}"
+end
